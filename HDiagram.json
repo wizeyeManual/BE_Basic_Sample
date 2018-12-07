@@ -1,0 +1,188 @@
+var HDiagram=
+    {
+        drawFrame: function(data, style, depth)
+        {
+            var IsRoot = !data.Parent;
+            var parentRect = (IsRoot) ? this._templateElement.coordinates : data.Parent.element.coordinates;
+            var total = (IsRoot) ? 1 : data.Parent.Children.length;
+            var order = (IsRoot)?0:data.Parent.Children.indexOf(data);
+            var r_w = parentRect.Width / 100;
+            var r_h = parentRect.Height / 100;
+            var Cols = Math.round(Math.sqrt(total) + 0.49);
+            var Rows = Math.round((total / Cols) + 0.49);
+            var marginA_w = r_w * style.MarginA;
+            var marginA_h = r_h * style.MarginA;
+            var marginB_w = r_w * style.MarginB;
+            var marginB_h = r_h * style.MarginB;
+            var marginA = (marginA_h < marginA_w) ? marginA_h : marginA_w;
+            var width = parentRect.Width - (marginA * 2);
+            var height = parentRect.Height - (marginA * 2);
+            var c_w, c_h, row, col, left, top;
+            if (IsRoot)
+            {
+                var child_total = data.Children.length;
+                if (child_total > 0)
+                {
+                    var child_depth = depth+1;
+                    var child_cols = Math.round(Math.sqrt(child_total) + 0.49);
+                    var child_rows = Math.round((child_total / child_cols) + 0.49);
+                    if (child_cols > child_rows)
+                    {
+                        var childStyle = data.Children[0].Style;
+                        var child_MAw = width * (childStyle.MarginA / 100);
+                        var child_MAh = height * (childStyle.MarginA / 100);
+                        var child_MBw = width * (childStyle.MarginB / 100);
+                        var child_MBh = height * (childStyle.MarginB / 100);
+                        var child_width = width - (child_MAw * 2);
+                        var child_height = height - (child_MAh * 2);
+                        var child_cw = (child_width - (child_MBw * (child_cols - 1))) / child_cols;
+                        var child_ch = (child_height - (child_MBh * (child_rows - 1))) / child_rows;
+                        if (child_cw > child_ch)
+                        {
+                            child_cw = child_ch;
+                            child_width = child_cw * child_cols + child_MBw * (child_cols - 1);
+                            width = child_width + (child_MAw * 2);
+                        }
+                        else
+                        {
+                            child_ch = child_cw;
+                            child_height = child_ch * child_rows + child_MBh * (child_rows - 1);
+                            height = child_height + (child_MAh * 2);
+                        }
+                    }
+                    else
+                    {
+                        if (height < width) width = height;
+                        else height = width;
+                    }
+                }
+            }
+            if (depth == 1)
+            {
+                c_w = (width - (marginB_w * (Cols - 1))) / Cols;
+                c_h = (height - (marginB_h * (Rows - 1))) / Rows;
+            }
+            else
+            {
+                c_w = (width - (marginB_w * (Cols - 1))) / Cols;
+                c_h = (height - (marginB_h * (Cols - 1))) / Cols;
+            }
+            row = Math.floor(order / Cols);
+            col = order % Cols;
+            left = parentRect.Left + (parentRect.Width - width) / 2 + col * (marginB_w + c_w);
+            top = parentRect.Top + (parentRect.Height - height) / 2 + row * (marginB_h + c_h);
+            var rect = Utils.CreateUniversal(this._canvas, {
+                "ObjectName": data.Name,
+                "Position": JSRect.create(left, top, c_w, c_h),
+                "BorderColor": style.BorderColor,
+                "BackGroundColor": style.BackGroundColor,
+                "BorderRadius": style.BorderRadius,
+                "BorderThickness": style.BorderThickness,
+                "TitlePosition": style.TitlePosition,
+                "TitleAlignment": "center",
+                "TitleColor": style.TitleColor,
+                "Label": (!data.Label || data.Label.length == 0)?data.Name:data.Label,
+                "AlarmLampPosition": [0.95, 0.05],
+                "AlarmLampSize": 6,
+                "AlarmLampColor": "#FF008000",
+                "ShowAlarmLamp": style.ShowAlarmLamp,
+                "MapLink": (data.Link)?data.Link.MapId:"",
+                "MapLinkTarget": ""
+            });
+            data.element = rect;
+        }
+        ,
+        drawObject: function(data, style, depth)
+        {
+            var IsRoot = !data.Parent;
+            var parentRect = (IsRoot) ? this._templateElement.coordinates : data.Parent.element.coordinates;
+            var total = (IsRoot) ? 1 : data.Parent.Children.length;
+            var order = (IsRoot) ? 0 : data.Parent.Children.indexOf(data);
+            var r_w = parentRect.Width / 100;
+            var r_h = parentRect.Height / 100;
+            var Cols = Math.round(Math.sqrt(total) + 0.49);
+            var marginA_w = r_w * style.MarginA;
+            var marginA_h = r_h * style.MarginA;
+            var marginB_w = r_w * style.MarginB;
+            var marginB_h = r_h * style.MarginB;
+            var marginA = (marginA_h < marginA_w) ? marginA_h : marginA_w;
+            var width = parentRect.Width - (marginA * 2);
+            var height = parentRect.Height - (marginA * 2);
+            var c_w = (width - (marginB_w * (Cols - 1))) / Cols;
+            var c_h = (height - (marginB_h * (Cols - 1))) / Cols;
+            var row = Math.floor(order / Cols);
+            var col = order % Cols;
+            var left = parentRect.Left + (parentRect.Width - width) / 2 + col * (marginB_w + c_w);
+            var top = parentRect.Top + (parentRect.Height - height) / 2 + row * (marginB_h + c_h);
+            var TitleCaptionLength = (data.Label)?data.Label.length:0;
+            var titlePosition;
+            if (TitleCaptionLength < 8) // 1~7
+            {
+                titlePosition = [[0.10, 0.40], [0.90, 0.60]];
+                //20
+            }
+            else if (TitleCaptionLength < 16) // 8~15
+            {
+                titlePosition = [[0.10, 0.30], [0.90, 0.70]];
+                //40
+            }
+            else if (TitleCaptionLength < 24) // 16~23
+            {
+                titlePosition = [[0.10, 0.20], [0.90, 0.80]];
+                //60
+            }
+            else //24~
+            {
+                titlePosition = [[0.10, 0.15], [0.90, 0.85]];
+                //70
+            }
+            var rect = Utils.CreateUniversal(this._canvas, {
+                "ObjectName": data.Name,
+                "Position": JSRect.create(left, top, c_w, c_h),
+                "BorderColor": style.BorderColor,
+                "BackGroundColor": style.BackGroundColor,
+                "BorderRadius": style.BorderRadius,
+                "BorderThickness": style.BorderThickness,
+                "TitlePosition": titlePosition,
+                "TitleAlignment": "center",
+                "TitleColor": style.TitleColor,
+                "Label": (!data.Label || data.Label.length == 0)?data.Name:data.Label,
+                "AlarmLampPosition": [0.95, 0.05],
+                "AlarmLampSize": 6,
+                "AlarmLampColor": "#FF008000",
+                "ShowAlarmLamp": style.ShowAlarmLamp,
+                "MapLink": (data.Link)?data.Link.MapId:"",
+                "MapLinkTarget": "",
+                "HardLink": (style.HardLink)?style.HardLink:""
+            });
+        }
+        ,
+        drawLoop: function(data, depth)
+        {
+            var leaf = (data.Children == null || data.Children.length == 0);
+            if (leaf)
+            {
+                debug.print("object : " + data.Name);
+                this.drawObject(data, data.Style, depth);
+            }
+            else
+            {
+                debug.print("frame : " + data.Name);
+                this.drawFrame(data, data.Style, depth);
+                for(var e in data.Children)
+                {
+                    data.Children[e].Parent = data;
+                    this.drawLoop(data.Children[e], depth+1);
+                }
+            }
+        }
+        ,
+        main: function()
+        {
+            debug.print(JSON.stringify(this._data));
+            for(var idx in this._data)
+            {
+                this.drawLoop(this._data[idx], 0);
+            }
+        }
+    }
